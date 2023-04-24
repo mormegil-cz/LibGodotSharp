@@ -30,14 +30,14 @@ namespace Generators
                 unregistrations = $"GDExtensionMain.extensionInterface.classdb_unregister_extension_class(GDExtensionMain.library, {n.@namespace}.{n.name}.__godot_name._internal_pointer);\n\t\t\t" + unregistrations;
             }
             Debug.WriteLine($"Building Entry {registrations}");
-            var assimblyName = context.Compilation.AssemblyName ?? "NoName";
+            var assemblyName = Renamer.CleanupIdentifier(context.Compilation.AssemblyName) ?? "NoName";
             var source = $$"""
 			using System;
 			using System.Runtime.CompilerServices;
 			using System.Runtime.InteropServices;
 			using GDExtension;
 			using static GDExtension.Native;
-			public static class {{assimblyName}}ExtensionEntry {
+			public static class {{assemblyName}}ExtensionEntry {
 				public static unsafe bool EntryPoint(GDExtensionInterface @interface, void* library, GDExtensionInitialization* init) {
 					GDExtensionMain.extensionInterface = @interface;
 					GDExtensionMain.library = library;

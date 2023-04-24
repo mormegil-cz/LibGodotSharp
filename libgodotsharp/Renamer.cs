@@ -43,5 +43,23 @@ namespace Generators
 		}
 
 		static bool IsUpper(char c) => char.IsUpper(c) || char.IsDigit(c);
+
+		public static string CleanupIdentifier(string identifier)
+		{
+			if (identifier == null)
+			{
+				return null;
+			}
+
+			var res = new StringBuilder(identifier.Length);
+			foreach (var current in identifier)
+			{
+				if (char.IsLetterOrDigit(current) || current == '_')
+				{
+					res.Append(current);
+				}
+			}
+			return res.Length > 0 ? res.ToString() : null;
+		}
 	}
 }
