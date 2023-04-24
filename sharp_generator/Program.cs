@@ -30,6 +30,9 @@ namespace SharpGenerator
                 GodotRootDir = args[0];
             }
             var startingDir = GodotRootDir;
+
+            var searchedPathsToGenJson = new[] { Path.Combine(Environment.CurrentDirectory, "extension_api.json"), Path.Combine(Directory.GetCurrentDirectory(), "extension_api.json") };
+
             if (File.Exists(Path.Combine(startingDir, "godot", "SConstruct")))
             {
                 GodotRootDir = Path.Combine(startingDir, "godot");
@@ -100,48 +103,12 @@ namespace SharpGenerator
             {
                 throw new Exception("Editor build not found");
             }
-            try
+            if (!searchedPathsToGenJson.Any(File.Exists))
             {
-                var copyfile = Path.Combine(path, "..", "libgodot");
-                copyfile = Path.GetFullPath(copyfile);
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    copyfile += ".dll";
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                {
-                    copyfile += ".dylib";
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                {
-                    copyfile += ".so";
-                }
-                File.Copy(path, copyfile, true);
-                if (!File.Exists(copyfile))
-                {
-                    throw new Exception($"Editor file copy failed from {path} to {copyfile}");
-                }
-                GodotLibrary = NativeLibrary.Load(Path.GetFullPath(copyfile));
-                if (GodotLibrary == IntPtr.Zero)
-                {
-                    throw new Exception("Failed to laod godot");
-                }
-                var custom_args = new string[] { "libgodot", "--dump-extension-api", "--verbose", "--headless", "" };
-                if (godot_main(custom_args.Length - 1, custom_args) != 0)
-                {
-                    throw new Exception("Godot had error");
-                }
+                DumpExtensionApi(path);
             }
-            catch (Exception e)
-            {
-                Warn(e.ToString());
-            }
-            var pathToGenJson = Path.Combine(Environment.CurrentDirectory, "extension_api.json");
-            if (!File.Exists(pathToGenJson))
-            {
-                pathToGenJson = Path.Combine(Directory.GetCurrentDirectory(), "extension_api.json");
-            }
-            if (!File.Exists(pathToGenJson))
+            var pathToGenJson = searchedPathsToGenJson.FirstOrDefault(File.Exists);
+            if (pathToGenJson == null)
             {
                 throw new Exception("Failed to find extension_api json");
             }
@@ -223,6 +190,47 @@ EndProject";
 
 
             Console.WriteLine("Done setting up TemplateProject");
+        }
+
+        private static void DumpExtensionApi(string path)
+        {
+            try
+            {
+                // var copyfile = Path.Combine(path, "..", "libgodot");
+                var copyfile = Path.Combine(Directory.GetCurrentDirectory(), "libgodot");
+                copyfile = Path.GetFullPath(copyfile);
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    copyfile += ".dll";
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    copyfile += ".dylib";
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    copyfile += ".so";
+                }
+                File.Copy(path, copyfile, true);
+                if (!File.Exists(copyfile))
+                {
+                    throw new Exception($"Editor file copy failed from {path} to {copyfile}");
+                }
+                GodotLibrary = NativeLibrary.Load(Path.GetFullPath(copyfile));
+                if (GodotLibrary == IntPtr.Zero)
+                {
+                    throw new Exception("Failed to laod godot");
+                }
+                var custom_args = new string[] { "libgodot", "--dump-extension-api", "--verbose", "--headless", "" };
+                if (godot_main(custom_args.Length - 1, custom_args) != 0)
+                {
+                    throw new Exception("Godot had error");
+                }
+            }
+            catch (Exception e)
+            {
+                Warn(e.ToString());
+            }
         }
 
         private static void CopyFilesRecursively(string sourcePath, string targetPath)
