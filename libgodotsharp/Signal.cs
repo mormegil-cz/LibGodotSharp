@@ -14,9 +14,8 @@ namespace Generators
 		public static void Generate(GeneratorExecutionContext context, INamedTypeSymbol c)
 		{
 			var events = c.GetMembers().
-				Where(x => x is INamedTypeSymbol).
-				Select(x => (INamedTypeSymbol)x).
-				Where(x => x.GetAttributes().Where(x => x.AttributeClass.ToString() == "GDExtension.GDExtensionMain.libraryAttribute").Count() > 0)
+				OfType<INamedTypeSymbol>().
+				Where(member => member.GetAttributes().Any(attr => attr.AttributeClass.ToString() == "GDExtension.SignalAttribute"))
 				.ToArray();
 
 			var code = $$"""
@@ -33,18 +32,14 @@ namespace Generators
 				var ev = events[i];
 				var m = ev.DelegateInvokeMethod;
 
-				var infosName = "null";
-				if (m.Parameters.Length > 0)
+				var infosName = $"infos{ev.Name}";
+				code += $"\t\tvar {infosName} = stackalloc GDExtensionPropertyInfo[{m.Parameters.Length}];\n";
+				for (var j = 0; j < m.Parameters.Length; j++)
 				{
-					infosName = $"infos{ev.Name}";
-					code += $"\t\tvar {infosName} = stackalloc GDExtensionPropertyInfo[{m.Parameters.Length}];\n";
-					for (var j = 0; j < m.Parameters.Length; j++)
-					{
-						var p = m.Parameters[j];
-						code += $"\t\tinfos{ev.Name}[{j}] = {Methods.CreatePropertyInfo(p.Type, p.Name, 2)}\n";
-					}
+					var p = m.Parameters[j];
+					code += $"\t\tinfos{ev.Name}[{j}] = {Methods.CreatePropertyInfo(p.Type, p.Name, 2)}\n";
 				}
-				code += $"\t\tGDExtensionMain.extensionInterface.classdb_register_extension_class_signal(GDExtensionInterface.gdLibrary, __godot_name._internal_pointer, new StringName(\"{Renamer.ToSnake(ev.Name)}\")._internal_pointer, {infosName}, {m.Parameters.Length});\n";
+				code += $"\t\tGDExtensionMain.extensionInterface.classdb_register_extension_class_signal(GDExtensionMain.library, __godot_name._internal_pointer, new StringName(\"{Renamer.ToSnake(ev.Name)}\")._internal_pointer, {infosName}[0], {m.Parameters.Length});\n";
 			}
 			code += $$"""
 				}
