@@ -478,12 +478,12 @@ public class Convert
         if (offset >= 0)
         {
             file.WriteLine($"\t[FieldOffset({offset})]");
-            file.WriteLine($"\tpublic {member.type} {member.name};");
+            file.WriteLine($"\tpublic {member.type} {Fixer.SnakeToPascal(member.name)};");
         }
         else
         {
             file.WriteLine($$"""
-				public {{member.type}} {{member.name}} {
+				public {{member.type}} {{Fixer.SnakeToPascal(member.name)}} {
 					get {
 						{{member.type}} res;
 						fixed ({{Fixer.Type(c.name, api)}}* ptr = &this) {
