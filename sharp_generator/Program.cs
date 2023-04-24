@@ -31,6 +31,12 @@ namespace SharpGenerator
             }
             var startingDir = GodotRootDir;
 
+            GithubBuildVersion = Environment.GetEnvironmentVariable("BUILD_VERSION");
+            if (GithubBuildVersion != null)
+            {
+                VersionInfo.Version = GithubBuildVersion;
+            }
+
             var searchedPathsToGenJson = new[] { Path.Combine(Environment.CurrentDirectory, "extension_api.json"), Path.Combine(Directory.GetCurrentDirectory(), "extension_api.json") };
 
             if (File.Exists(Path.Combine(startingDir, "godot", "SConstruct")))
@@ -141,7 +147,6 @@ namespace SharpGenerator
 
             //Copy all platform files
 
-            GithubBuildVersion = Environment.GetEnvironmentVariable("BUILD_VERSION");
             if (GithubBuildVersion is null)
             {
                 return;
